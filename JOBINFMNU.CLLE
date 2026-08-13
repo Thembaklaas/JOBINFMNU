@@ -1,0 +1,79 @@
+/* ================================================================ */
+/* JOBINFMNU - IBM i CLLE Job Information Utility                    */
+/* Portfolio / anonymized version                                    */
+/* ================================================================ */
+
+             PGM        PARM(&NBR &USR &JOB)
+
+             DCL        VAR(&NBR) TYPE(*CHAR) LEN(11)
+             DCL        VAR(&USR) TYPE(*CHAR) LEN(11)
+             DCL        VAR(&JOB) TYPE(*CHAR) LEN(11)
+             DCL        VAR(&OPTION) TYPE(*CHAR) LEN(1)
+
+             DCLF       FILE(MYLIB/JOBINFMNU)
+
+MENU:
+             CHGVAR     VAR(&DSPJOB) VALUE(%TRIM(&NBR) *CAT '/' *CAT +
+                          %TRIM(&USR) *CAT '/' *CAT %TRIM(&JOB))
+
+             SNDRCVF    RCDFMT(JOBMENU)
+
+             IF         COND(&IN03) THEN(GOTO CMDLBL(EXIT))
+
+             IF         COND(&OPTION *EQ '1') THEN(DO)
+                DSPJOB     JOB(&NBR/&USR/&JOB)
+                MONMSG     MSGID(CPF2443) EXEC(DO)
+                   CHGVAR     VAR(&MSG) +
+                             VALUE('Job unavailable because the +
+                             job has ended/removed.')
+                ENDDO
+                GOTO       CMDLBL(MENU)
+             ENDDO
+
+             IF         COND(&OPTION *EQ '2') THEN(DO)
+                DSPJOBLOG  JOB(&NBR/&USR/&JOB)
+                MONMSG     MSGID(CPF2443) EXEC(DO)
+                   CHGVAR     VAR(&MSG) +
+                             VALUE('Job log unavailable because the +
+                             job has ended.')
+                ENDDO
+                GOTO       CMDLBL(MENU)
+             ENDDO
+
+             IF         COND(&OPTION *EQ '3') THEN(DO)
+                DSPMSG     MSGQ(&USR)
+                GOTO       CMDLBL(MENU)
+             ENDDO
+
+             IF         COND(&OPTION *EQ '4') THEN(DO)
+                CLRPFM     FILE(MYLIB/JOBSTATUS)
+                SNDPGMMSG  MSG('STEP 1 - FILE CLEARED')
+
+                RUNSQL     SQL('INSERT INTO MYLIB/JOBSTATUS +
+                           SELECT JOB_STATUS +
+                           FROM TABLE(QSYS2.JOB_INFO( +
+                           JOB_USER_FILTER => ''DEMOUSER'')) +
+                           WHERE JOB_NAME_SHORT = ''JOBINFMNU'' +
+                           AND JOB_NUMBER = ''000000''') +
+                           COMMIT(*NONE)
+
+                SNDPGMMSG  MSG('STEP 2 - SQL FINISHED')
+
+                OVRDBF     FILE(JOBSTATUS) TOFILE(MYLIB/JOBSTATUS)
+                RCVF
+                SNDPGMMSG  MSG('STEP 3 - RCVF FINISHED')
+                DLTOVR     FILE(JOBSTATUS)
+
+                CHGVAR     VAR(&STATUS) VALUE(&JOBSTATE)
+                GOTO       CMDLBL(MENU)
+             ENDDO
+
+             IF         COND(&OPTION *EQ '5') THEN(DO)
+                GOTO       CMDLBL(EXIT)
+             ENDDO
+
+             SNDPGMMSG  MSG('Invalid selection.')
+             GOTO       CMDLBL(MENU)
+
+EXIT:
+             ENDPGM

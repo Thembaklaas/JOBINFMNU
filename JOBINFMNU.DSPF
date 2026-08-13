@@ -1,0 +1,18 @@
+     A          R JOBMENU
+     A                                      CA03(03 'EXIT')
+     A                                  2  5'IBM i JOB INFORMATION'
+     A                                  3  5'---------------------------'
+     A                                  5  5'JOB:'
+     A            DSPJOB        26A  O  5 10
+     A                                  7  5'1. JOB INFORMATION'
+     A                                  8  5'2. JOB LOG'
+     A                                  9  5'3. JOB MESSAGES'
+     A                                 10  5'4. JOB STATUS'
+     A                                 11  5'5. EXIT'
+     A                                 13  5'SELECTION:'
+     A            OPTION         1A  I 13 16DSPATR(UL)
+     A                                 15  5'JOB STATUS:'
+     A            STATUS        10A  O 15 17
+     A                                 16  5'MESSAGE:'
+     A            MSG           60A  O 16 14
+     A                                 23  5'F3=EXIT'
